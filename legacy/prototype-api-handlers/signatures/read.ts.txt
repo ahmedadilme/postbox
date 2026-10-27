@@ -1,0 +1,36 @@
+import { NextResponse } from "next/server"
+import type { BindingParams } from "next/cookies"
+
+import { db } from "@/lib/db"
+import { eq, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
+
+// Get all signatures for the current user
+export async function GET(req: Request): Promise<NextResponse> {
+  const userId = req.cookies?.get("userId") as string || ""
+  
+  if (!userId) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+  }
+
+  const [signatures] = await db.select().from(signature).where(eq(signature.userId, userId)).orderBy(sql.desc("createdAt")).limit(10)
+  
+  return NextResponse.json({ signatures })
+}
+
+// Get a specific signature by ID
+export async function GETById(req: Request): Promise<NextResponse> {
+  const { id } = await req.getBody().parse("application/json")
+  
+  if (!id) {
+    return NextResponse.json({ error: "Signature ID is required" }, { status: 400 })
+  }
+
+  const [signature] = await db.select().from(signature).where(eq(signature.id, id)).limit(1)
+  
+  if (!signature) {
+    return NextResponse.json({ error: "Signature not found" }, { status: 404 })
+  }
+
+  return NextResponse.json({ signature })
+}

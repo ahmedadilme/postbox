@@ -1,0 +1,97 @@
+import { useState } from "react"
+import type { BindingParams } from "next/cookies"
+
+interface Props {
+  onRegister: (name: string, email: string, password: string) => void
+}
+
+export default function SignUpPage({ onRegister }: Props) {
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(): Promise<void> {
+    setLoading(true)
+    try {
+      const res = await fetch("/api/auth/sign-up", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      })
+      const data = await res.json()
+      
+      if (data.error) {
+        setError(data.error)
+        return
+      }
+      
+      // Successful registration - redirect to sign-in
+      window.location.href = "/sign-in"
+    } catch (err) {
+      console.error("Sign-up failed:", err)
+      setError("Failed to register. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Create Account</h2>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 rounded-lg text-sm text-red-700">{error}</div>
+        )}
+        
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name</label>
+            <input
+              id="name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={loading || !name || !email || !password}
+            className="w-full py-2.5 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-70 transition-colors"
+          >
+            {loading ? "Creating account..." : "Create Account"}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}

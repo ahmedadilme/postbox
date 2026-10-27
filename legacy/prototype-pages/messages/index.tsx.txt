@@ -1,0 +1,77 @@
+import { useState } from "react"
+import { useRouter } from "next/router"
+import type { BindingParams } from "next/cookies"
+
+interface Props {
+  onCreate: (name: string, plan: string) => void
+}
+
+export default function MessagesPage({ onCreate }: Props) {
+  const router = useRouter()
+  const [name, setName] = useState("")
+  const [plan, setPlan] = useState("free")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(): Promise<void> {
+    setLoading(true)
+    try {
+      await onCreate(name, plan)
+      setName("")
+      setPlan("free")
+      setError("")
+    } catch (err) {
+      console.error("Message creation failed:", err)
+      setError(err.message || "Failed to create message")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Messages</h2>
+      
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 rounded-lg text-sm text-red-700">{error}</div>
+      )}
+      
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="message-name" className="block text-sm font-medium text-gray-700">Message Name</label>
+          <input
+            id="message-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter message name..."
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="message-plan" className="block text-sm font-medium text-gray-700">Plan</label>
+          <select
+            id="message-plan"
+            value={plan}
+            onChange={(e) => setPlan(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="free">Free</option>
+            <option value="pro">Pro</option>
+            <option value="team">Team</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+        </div>
+        
+        <button
+          type="submit"
+          disabled={loading || !name || !plan}
+          className="w-full py-2.5 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-70 transition-colors"
+        >
+          {loading ? "Creating message..." : "Create Message"}
+        </button>
+      </form>
+    </div>
+  )
+}

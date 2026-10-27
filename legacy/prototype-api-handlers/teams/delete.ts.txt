@@ -1,0 +1,26 @@
+import { NextResponse } from "next/server"
+import type { BindingParams } from "next/cookies"
+
+import { db } from "@/lib/db"
+import { eq, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
+
+// Delete a team (soft delete - keep data but mark suspended)
+export async function DELETE(req: Request): Promise<NextResponse> {
+  const { id } = await req.getBody().parse("application/json")
+  
+  if (!id) {
+    return NextResponse.json({ error: "Team ID is required" }, { status: 400 })
+  }
+
+  const [team] = await db.select().from(team).where(eq(team.id, id)).limit(1)
+  
+  if (!team) {
+    return NextResponse.json({ error: "Team not found" }, { status: 404 })
+  }
+
+  // Soft delete by setting suspended flag
+  await db.update(team).set({ suspended: true }).where(eq(team.id, id))
+  
+  return NextResponse.json({ message: "Team deactivated" })
+}

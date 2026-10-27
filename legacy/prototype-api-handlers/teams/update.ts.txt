@@ -1,0 +1,38 @@
+import { NextResponse } from "next/server"
+import type { BindingParams } from "next/cookies"
+
+import { db } from "@/lib/db"
+import { eq, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
+
+// Update a team (e.g., change plan)
+export async function PUT(req: Request): Promise<NextResponse> {
+  const { name, plan, stripeCustomerId, stripeSubscriptionId } = await req.getBody().parse("application/json")
+
+  if (!name || !plan) {
+    return NextResponse.json({ error: "Name and plan are required" }, { status: 400 })
+  }
+
+  // Get current team
+  const [team] = await db.select().from(team).where(eq(team.id, req.cookies?.get("userId") as string)).limit(1)
+  
+  if (!team) {
+    return NextResponse.json({ error: "Team not found" }, { status: 404 })
+  }
+
+  // Validate plan
+  const validPlans = ["free", "pro", "team", "enterprise"]
+  if (!validPlans.includes(plan)) {
+    return NextResponse.json({ error: `Invalid plan. Must be one of: ${validPlans.join(", ")}` }, { status: 400 })
+  }
+
+  // Update team fields
+  const updated = await db.update(team).set({
+    name,
+    plan,
+    stripeCustomerId: stripeCustomerId,
+    stripeSubscriptionId: stripeSubscriptionId,
+  }).where(eq(team.id, req.cookies?.get("userId") as string)).returning()
+
+  return NextResponse.json({ team: updated })
+}

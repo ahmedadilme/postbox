@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postbox
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/postbox
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET in your environment}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set ENCRYPTION_KEY in your environment}
+      SYNC_CRON_SECRET: ${SYNC_CRON_SECRET:?Set SYNC_CRON_SECRET in your environment}
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/sign-in').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  sync-scheduler:
+    build: .
+    command: ["node", "scripts/sync-scheduler.mjs"]
+    environment:
+      SYNC_ENDPOINT: http://app:3000/api/sync
+      SYNC_CRON_SECRET: ${SYNC_CRON_SECRET:?Set SYNC_CRON_SECRET in your environment}
+      SYNC_INTERVAL_MS: ${SYNC_INTERVAL_MS:-300000}
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

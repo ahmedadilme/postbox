@@ -1,0 +1,46 @@
+import { NextResponse } from "next/server"
+import type { BindingParams } from "next/cookies"
+
+import { db } from "@/lib/db"
+import { eq, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
+
+// Remove a user from a team
+export async function DELETE(req: Request): Promise<NextResponse> {
+  const { userId } = await req.getBody().parse("application/json")
+  
+  if (!userId) {
+    return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+  }
+
+  // Get current user
+  const [user] = await db.select().from(user).where(eq(user.id, req.cookies?.get("userId") as string)).limit(1)
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 })
+  }
+
+  // Get team ID from cookie
+  const teamId = req.cookies?.get("teamId") as string | null
+  if (!teamId) {
+    return NextResponse.json({ error: "Team not selected" }, { status: 400 })
+  }
+
+  // Find team
+  const [team] = await db.select().from(team).where(eq(team.id, teamId)).limit(1)
+  if (!team) {
+    return NextResponse.json({ error: "Team not found" }, { status: 404 })
+  }
+
+  // Check if user is in team
+  const existingMember = await db.select({ id: teamMember.id }).from(teamMember).where(
+    eq(teamMember.userId, userId),
+    eq(teamMember.teamId, teamId)
+  ).limit(1)
+  
+  if (existingMember) {
+    await db.delete(teamMember).where(eq(teamMember.userId, userId))
+    return NextResponse.json({ message: "Removed from team" })
+  }
+
+  return NextResponse.json({ message: "User not in this team" }, { status: 404 })
+}

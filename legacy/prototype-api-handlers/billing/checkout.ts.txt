@@ -1,0 +1,40 @@
+import { NextResponse } from "next/server"
+import type { BindingParams } from "next/cookies"
+
+import { db } from "@/lib/db"
+import { eq, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
+
+// Checkout for upgrading a team's plan
+export async function POST(req: Request): Promise<NextResponse> {
+  const { plan } = await req.getBody().parse("application/json")
+  
+  if (!plan) {
+    return NextResponse.json({ error: "Plan is required" }, { status: 400 })
+  }
+
+  // Get current user
+  const [user] = await db.select().from(user).where(eq(user.id, req.cookies?.get("userId") as string)).limit(1)
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 })
+  }
+
+  // Validate plan
+  const validPlans = ["free", "pro", "team", "enterprise"]
+  if (!validPlans.includes(plan)) {
+    return NextResponse.json({ error: `Invalid plan. Must be one of: ${validPlans.join(", ")}` }, { status: 400 })
+  }
+
+  // Get current team
+  const [team] = await db.select().from(team).where(eq(team.userId, req.cookies?.get("userId") as string)).limit(1)
+  if (!team) {
+    return NextResponse.json({ error: "Team not found" }, { status: 404 })
+  }
+
+  // Update team plan
+  const updated = await db.update(team).set({
+    plan,
+  }).where(eq(team.id, req.cookies?.get("userId") as string)).returning()
+
+  return NextResponse.json({ plan: updated.plan, message: "Plan upgraded successfully" }, { status: 200 })
+}

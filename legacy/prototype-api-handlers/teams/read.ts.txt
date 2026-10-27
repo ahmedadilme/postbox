@@ -1,0 +1,31 @@
+import { NextResponse } from "next/server"
+import type { BindingParams } from "next/cookies"
+
+import { db } from "@/lib/db"
+import { eq, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
+
+// List all teams (with optional filters)
+export async function GET(req: Request): Promise<NextResponse> {
+  const query = db.select()
+  
+  // Apply filters
+  const teamId = req.query.teamId
+  if (teamId) {
+    query = query.where(eq(query.table.id, teamId))
+  }
+  
+  const page = parseInt(req.query.page as string) || 1
+  const limit = parseInt(req.query.limit as string) || 20
+  const offset = (page - 1) * limit
+  
+  const [teams] = await query
+    .orderBy(sql.desc("createdAt"))
+    .limit(limit)
+    .offset(offset)
+    .take(limit)
+    .groupBy(sql.column("id"))
+    .toArray()
+  
+  return NextResponse.json({ teams, total: teams.length, page, limit })
+}

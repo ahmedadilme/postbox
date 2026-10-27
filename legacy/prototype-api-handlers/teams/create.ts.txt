@@ -1,0 +1,59 @@
+import { NextResponse } from "next/server"
+import type { BindingParams } from "next/cookies"
+
+import { db } from "@/lib/db"
+import { eq, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
+
+// Get existing team if it already exists for this user
+async function getTeamForUser(userId: string): Promise<{ id: string; name: string; slug: string } | null> {
+  const [team] = await db
+    .select({ id: team.id, name: team.name, slug: team.slug })
+    .from(team)
+    .where(eq(team.userId, userId))
+    .limit(1)
+    .returning()
+  return team
+}
+
+export async function POST(req: Request): Promise<NextResponse> {
+  const { name, plan, stripeCustomerId, stripeSubscriptionId } = await req.getBody().parse("application/json")
+
+  if (!name || !plan) {
+    return NextResponse.json({ error: "Name and plan are required" }, { status: 400 })
+  }
+
+  // Check if team already exists for this user
+  const existing = await getTeamForUser(req.cookies?.get("userId") as string || "")
+  if (existing) {
+    return NextResponse.json({ message: "Team already exists" }, { status: 409 })
+  }
+
+  // Validate plan
+  const validPlans = ["free", "pro", "team", "enterprise"]
+  if (!validPlans.includes(plan)) {
+    return NextResponse.json({ error: `Invalid plan. Must be one of: ${validPlans.join(", ")}` }, { status: 400 })
+  }
+
+  // Create team
+  const teamId = "t_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
+  
+  const [created] = await db.insert(team).values({
+    name,
+    slug: `team-${name.toLowerCase().replace(/\s+/g, "-")}`,
+    plan,
+    stripeCustomerId: stripeCustomerId || undefined,
+    stripeSubscriptionId: stripeSubscriptionId || undefined,
+    suspended: false,
+    createdAt: new Date(),
+  }).returning()
+
+  // Ensure user is in the team
+  await db.insert(teamMember).values({
+    teamId,
+    userId: req.cookies?.get("userId") as string || "",
+    role: "member",
+  })
+
+  return NextResponse.json({ teamId, name, plan }, { status: 201 })
+}

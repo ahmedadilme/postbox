@@ -1,0 +1,42 @@
+import { NextResponse } from "next/server"
+import type { BindingParams } from "next/cookies"
+
+import { db } from "@/lib/db"
+import { eq, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
+
+// Create a new team
+export async function POST(req: Request): Promise<NextResponse> {
+  const { name, plan, stripeCustomerId, stripeSubscriptionId } = await req.getBody().parse("application/json")
+
+  if (!name || !plan) {
+    return NextResponse.json({ error: "Name and plan are required" }, { status: 400 })
+  }
+
+  // Check if user already has a team
+  const existing = await db.select().from(team).where(eq(team.userId, req.cookies?.get("userId") as string)).limit(1)
+  if (existing) {
+    return NextResponse.json({ message: "A team with this name already exists" }, { status: 409 })
+  }
+
+  // Validate plan
+  const validPlans = ["free", "pro", "team", "enterprise"]
+  if (!validPlans.includes(plan)) {
+    return NextResponse.json({ error: `Invalid plan. Must be one of: ${validPlans.join(", ")}` }, { status: 400 })
+  }
+
+  // Create team
+  const teamId = "t_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
+  
+  const [created] = await db.insert(team).values({
+    name,
+    slug: `team-${name.toLowerCase().replace(/\s+/g, "-")}`,
+    plan,
+    stripeCustomerId: stripeCustomerId,
+    stripeSubscriptionId: stripeSubscriptionId,
+    suspended: false,
+    createdAt: new Date(),
+  }).returning()
+
+  return NextResponse.json({ teamId, name, plan }, { status: 201 })
+}

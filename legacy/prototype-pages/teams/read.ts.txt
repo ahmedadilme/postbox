@@ -1,0 +1,134 @@
+import { useState } from "react"
+import type { BindingParams } from "next/cookies"
+
+interface Props {
+  teamId?: string
+}
+
+export default function TeamsReadPage({ teamId }: Props) {
+  const [name, setName] = useState("")
+  const [plan, setPlan] = useState("free")
+  const [isEditing, setIsEditing] = useState(false)
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  async function fetchTeam(): Promise<any> {
+    try {
+      const res = await fetch(`/api/teams/${teamId}`, { method: "GET" })
+      return await res.json()
+    } catch (err) {
+      console.error("Failed to fetch team:", err)
+      throw err
+    }
+  }
+
+  async function handleSubmit(): Promise<void> {
+    setLoading(true)
+    try {
+      if (teamId) {
+        // Update existing team
+        await fetch(`/api/teams/${teamId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, plan }),
+        })
+      } else {
+        // Create new team
+        await fetch("/api/teams/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, plan }),
+        })
+      }
+      setIsEditing(false)
+    } catch (err) {
+      console.error("Update failed:", err)
+      setError(err.message || "Failed to update team")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!teamId && !isEditing) {
+    // Show list view
+    const teams = await fetch("/api/teams").then(res => res.json())
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Teams</h2>
+        
+        {teams.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">No teams found. Create your first team!</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {teams.map((team) => (
+              <div key={team.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                <h3 className="font-semibold text-lg mb-2">{team.name}</h3>
+                <p className="text-gray-600">{team.slug}</p>
+                <span className="inline-block mt-2 px-3 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full">
+                  {team.plan}
+                </span>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="mt-4 w-full py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                >
+                  Edit
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+  }
+
+  if (isEditing) {
+    setName(team?.name ?? "")
+    setPlan(team?.plan ?? "free")
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Edit Team</h2>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 rounded-lg text-sm text-red-700">{error}</div>
+        )}
+        
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="team-name" className="block text-sm font-medium text-gray-700">Team Name</label>
+            <input
+              id="team-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter team name..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          
+          <div>
+            <label htmlFor="team-plan" className="block text-sm font-medium text-gray-700">Plan</label>
+            <select
+              id="team-plan"
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="free">Free</option>
+              <option value="pro">Pro</option>
+              <option value="team">Team</option>
+              <option value="enterprise">Enterprise</option>
+            </select>
+          </div>
+          
+          <button
+            type="submit"
+            disabled={loading || !name}
+            className="w-full py-2.5 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-70 transition-colors"
+          >
+            {loading ? "Updating..." : "Save Changes"}
+          </button>
+        </form>
+      </div>
+    )}
+  }
+}

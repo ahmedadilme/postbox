@@ -1,0 +1,30 @@
+import { NextResponse } from "next/server"
+import type { BindingParams } from "next/cookies"
+
+import { db } from "@/lib/db"
+import { eq, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
+
+// Create a new signature (digital signature image)
+export async function POST(req: Request): Promise<NextResponse> {
+  const { filename, altText, size } = await req.getBody().parse("application/json")
+
+  if (!filename || !altText) {
+    return NextResponse.json({ error: "Filename and alt text are required" }, { status: 400 })
+  }
+
+  // Verify file exists locally (simplified - in production use proper storage)
+  // For now, we'll generate a reference to the uploaded file
+  const signatureId = "sig-" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
+
+  // Insert signature record
+  const [created] = await db.insert(signature).values({
+    filename,
+    altText,
+    size,
+    userId: req.cookies?.get("userId") as string || "",
+    createdAt: new Date(),
+  }).returning()
+
+  return NextResponse.json({ signatureId, name: "New Signature", altText })
+}
