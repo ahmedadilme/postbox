@@ -125,11 +125,11 @@ cd "/home/$DEPLOY_USER/apps/postbox"
 set -a
 . /etc/postbox/postbox.env
 set +a
-npm ci
+npm ci --include=dev
 npm run build
 ```
 
-The `ENCRYPTION_KEY` is required during the build as well as at runtime.
+The `ENCRYPTION_KEY` is required during the build as well as at runtime. Because the production environment sets `NODE_ENV=production`, explicitly include development dependencies during the build: `@tailwindcss/postcss` is a build-time dependency and npm otherwise omits it. Use `npm ci --include=dev` in this step and in the update procedure below.
 
 ## 7. Run the app and sync scheduler with PM2
 
@@ -269,7 +269,7 @@ git checkout YOUR_RELEASE
 set -a
 . /etc/postbox/postbox.env
 set +a
-npm ci
+npm ci --include=dev
 npm run build
 # Apply only migrations added since the last deployment.
 pm2 restart ecosystem.config.cjs --update-env
