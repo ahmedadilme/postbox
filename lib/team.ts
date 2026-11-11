@@ -62,7 +62,7 @@ export async function getCurrentTeam(userId: string) {
       }
 
       const [existingTeam] = await tx.select().from(team).where(eq(team.slug, defaultSlug)).limit(1)
-      let targetTeam = existingTeam
+      let targetTeam: typeof existingTeam | undefined = existingTeam
       if (targetTeam) {
         const [existingMember] = await tx
           .select({ userId: teamMember.userId })

@@ -263,6 +263,8 @@ Create a Postbox user, sign in, add a mail account, and confirm the initial sync
 
 ## 10. Updating and backing up
 
+For the step-by-step update procedure used by the current `/home/root/apps/postbox` deployment, see [UPDATE-GUIDE.md](UPDATE-GUIDE.md). It covers a database backup, `git pull --ff-only`, dependency install/build, new migrations, PM2 restart, and PWA endpoint checks.
+
 Back up PostgreSQL, update the checkout, build with the production environment, apply only new migrations, and restart both PM2 processes:
 
 ```bash
