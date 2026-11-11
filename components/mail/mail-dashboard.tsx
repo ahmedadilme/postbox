@@ -398,7 +398,7 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
         {/* Sidebar: slide-out drawer on mobile, inline on desktop */}
         <div
           className={cn(
-            "absolute inset-y-0 left-0 z-30 transition-transform md:static md:z-auto md:translate-x-0",
+            "absolute inset-y-0 left-0 z-30 h-full w-64 overflow-x-hidden overflow-y-auto overscroll-y-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch] transition-transform md:static md:z-auto md:translate-x-0",
             sidebarOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >

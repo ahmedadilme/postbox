@@ -92,7 +92,7 @@ export function MailSidebar({
     : customFolders.filter((f) => f.accountId === selectedAccount)
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-border bg-sidebar">
+    <aside className="flex min-h-full w-64 shrink-0 flex-col border-r border-border bg-sidebar">
       <div className="flex items-center gap-2 px-4 py-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <Mail className="h-4 w-4" />
@@ -112,8 +112,7 @@ export function MailSidebar({
         </Button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
-        <div className="px-3 pb-4">
+      <div className="px-3 pb-4">
           {/* Standard folders */}
           <nav className="flex flex-col gap-0.5">
             {FOLDERS.map(({ type, label }) => {
@@ -369,7 +368,6 @@ export function MailSidebar({
               </button>
             )}
           </div>
-        </div>
       </div>
     </aside>
   )
