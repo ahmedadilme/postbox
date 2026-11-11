@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import type { MailMessage, MailAccount, FolderType, MailLabel } from "@/lib/mail/types"
 import { formatListDate, initials } from "@/lib/mail/format"
@@ -43,6 +43,7 @@ export function MessageList({
   onBatchArchive,
   onBatchDelete,
   onBatchMarkRead,
+  onBatchStar,
 }: {
   messages: MailMessage[]
   activeLabelName?: string
@@ -69,9 +70,13 @@ export function MessageList({
   onBatchArchive: () => void
   onBatchDelete: () => void
   onBatchMarkRead: () => void
+  onBatchStar?: (isStarred: boolean) => void
 }) {
   const accountColor = (id: number) => accounts.find((a) => a.id === id)?.color ?? "#2563eb"
   const batchMode = selectedIds.size > 0
+  const allSelected = messages.length > 0 && messages.every((m) => selectedIds.has(m.id))
+  const partiallySelected = selectedIds.size > 0 && !allSelected
+  const allSelectedStarred = selectedIds.size > 0 && Array.from(selectedIds).every((id) => messages.find((m) => m.id === id)?.isStarred)
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col border-r border-border bg-background md:w-96 md:shrink-0">
@@ -106,44 +111,110 @@ export function MessageList({
         </div>
       </div>
 
-      {/* Batch actions bar */}
-      {batchMode && (
-        <div className="flex items-center gap-1 border-b border-border bg-accent/30 px-3 py-1.5">
-          <span className="mr-2 text-xs text-muted-foreground">{selectedIds.size} selected</span>
-          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={onBatchArchive}>
-            {selectedFolder === "spam" ? <Inbox className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
-            {selectedFolder === "spam" ? "Not spam" : "Archive"}
+      {/* Select all & Batch actions toolbar */}
+      <div
+        className={cn(
+          "flex flex-wrap items-center justify-between gap-1 border-b border-border px-3 py-1.5 transition-colors",
+          batchMode ? "bg-accent/40" : "bg-muted/15"
+        )}
+      >
+        <div className="flex items-center gap-1.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onSelectAll}
+            disabled={messages.length === 0}
+            className="h-7 gap-1.5 px-2 text-xs font-medium"
+            title={allSelected ? "Deselect all" : `Select all ${messages.length} messages`}
+          >
+            <span
+              className={cn(
+                "flex h-4 w-4 items-center justify-center rounded border transition-colors",
+                allSelected
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : partiallySelected
+                  ? "border-primary bg-primary/20 text-primary"
+                  : "border-muted-foreground/40 hover:border-muted-foreground"
+              )}
+            >
+              {allSelected && <span className="text-[10px] font-bold leading-none">✓</span>}
+              {partiallySelected && <span className="text-[10px] font-bold leading-none">−</span>}
+            </span>
+            <span>{allSelected ? "Deselect all" : `Select all (${messages.length})`}</span>
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={onBatchDelete}>
-            <Trash2 className="h-3.5 w-3.5" />
-            Delete
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={onBatchMarkRead}>
-            <MailOpen className="h-3.5 w-3.5" />
-            Mark read
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" />}>
-              <Tag className="h-3.5 w-3.5" />
-              Labels
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {labels.length ? labels.map((mailLabel) => (
-                <DropdownMenuSub key={mailLabel.id}>
-                  <DropdownMenuSubTrigger>
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: mailLabel.color }} />
-                    {mailLabel.name}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuItem onClick={() => onBatchToggleLabel(mailLabel.id, true)}>Apply to selected</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onBatchToggleLabel(mailLabel.id, false)}>Remove from selected</DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-              )) : <DropdownMenuItem disabled>Create a label first</DropdownMenuItem>}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {batchMode && (
+            <span className="text-xs font-medium text-muted-foreground">· {selectedIds.size} selected</span>
+          )}
         </div>
-      )}
+
+        {batchMode && (
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              onClick={onBatchArchive}
+              title={selectedFolder === "spam" ? "Not spam (move to inbox)" : "Archive selected"}
+            >
+              {selectedFolder === "spam" ? <Inbox className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline">{selectedFolder === "spam" ? "Not spam" : "Archive"}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs text-destructive hover:text-destructive"
+              onClick={onBatchDelete}
+              title="Delete selected"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Delete</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              onClick={() => onBatchStar?.(!allSelectedStarred)}
+              title={allSelectedStarred ? "Remove from favourites" : "Add to favourites (Star)"}
+            >
+              <Star className={cn("h-3.5 w-3.5", allSelectedStarred ? "text-muted-foreground" : "fill-amber-400 text-amber-500")} />
+              <span className="hidden sm:inline">{allSelectedStarred ? "Unstar" : "Favourite"}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 px-2 text-xs"
+              onClick={onBatchMarkRead}
+              title="Mark selected as read"
+            >
+              <MailOpen className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Read</span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs" title="Labels" />}>
+                <Tag className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Labels</span>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel className="text-xs">Add / remove label</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {labels.length ? labels.map((mailLabel) => (
+                  <DropdownMenuSub key={mailLabel.id}>
+                    <DropdownMenuSubTrigger>
+                      <span className="mr-1.5 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: mailLabel.color }} />
+                      {mailLabel.name}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem onClick={() => onBatchToggleLabel(mailLabel.id, true)}>Apply to selected</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onBatchToggleLabel(mailLabel.id, false)}>Remove from selected</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )) : <DropdownMenuItem disabled>Create a label first</DropdownMenuItem>}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {loadError ? (

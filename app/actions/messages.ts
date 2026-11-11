@@ -396,10 +396,12 @@ export async function getFolderCounts(accountId: number | "all"): Promise<Folder
   return rows.map((r) => ({ folderType: r.folderType as FolderType, total: r.total, unread: r.unread }))
 }
 
-export async function setRead(id: number, isRead: boolean) {
+export async function setRead(id: number | number[], isRead: boolean) {
+  const ids = Array.isArray(id) ? id : [id]
+  if (ids.length === 0) return
   const { user, team } = await getUserAndTeam()
-  await assertDraftsAccessible([id], team.id, user.id)
-  const rows = await loadMutationRows([id], team.id, user.id)
+  await assertDraftsAccessible(ids, team.id, user.id)
+  const rows = await loadMutationRows(ids, team.id, user.id)
   const { outcomes, errors } = await applyImapOperation(rows, { type: "read", enabled: isRead })
   const safeIds = idsSafeToUpdate(rows, outcomes)
   if (safeIds.length) {
@@ -409,10 +411,12 @@ export async function setRead(id: number, isRead: boolean) {
   if (errors.length) throw errors[0]
 }
 
-export async function toggleStar(id: number, isStarred: boolean) {
+export async function toggleStar(id: number | number[], isStarred: boolean) {
+  const ids = Array.isArray(id) ? id : [id]
+  if (ids.length === 0) return
   const { user, team } = await getUserAndTeam()
-  await assertDraftsAccessible([id], team.id, user.id)
-  const rows = await loadMutationRows([id], team.id, user.id)
+  await assertDraftsAccessible(ids, team.id, user.id)
+  const rows = await loadMutationRows(ids, team.id, user.id)
   const { outcomes, errors } = await applyImapOperation(rows, { type: "star", enabled: isStarred })
   const safeIds = idsSafeToUpdate(rows, outcomes)
   if (safeIds.length) {

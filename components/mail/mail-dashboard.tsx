@@ -165,7 +165,8 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
 
   const handleSelectAll = useCallback(() => {
     setSelectedIds((prev) => {
-      if (prev.size === messages.length) return new Set()
+      const allSelected = messages.length > 0 && messages.every((m) => prev.has(m.id))
+      if (allSelected) return new Set()
       return new Set(messages.map((m) => m.id))
     })
   }, [messages])
@@ -192,9 +193,16 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
 
   const handleBatchMarkRead = useCallback(async () => {
     const ids = Array.from(selectedIds)
-    for (const id of ids) {
-      await setRead(id, true)
-    }
+    if (ids.length === 0) return
+    await setRead(ids, true)
+    setSelectedIds(new Set())
+    refreshAll()
+  }, [selectedIds, refreshAll])
+
+  const handleBatchStar = useCallback(async (isStarred: boolean = true) => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
+    await toggleStarAction(ids, isStarred)
     setSelectedIds(new Set())
     refreshAll()
   }, [selectedIds, refreshAll])
@@ -500,6 +508,7 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
             onBatchArchive={handleBatchArchive}
             onBatchDelete={handleBatchDelete}
             onBatchMarkRead={handleBatchMarkRead}
+            onBatchStar={handleBatchStar}
             activeLabelName={labels.find((item) => item.id === selectedLabelId)?.name ?? ({ starred: "Starred", attachments: "With Attachments", unread: "Unread", snoozed: "Snoozed", assigned: "Assigned to me" }[selectedSmartFolder ?? ""])}
             labels={labels}
             onBatchToggleLabel={async (labelId, add) => {
