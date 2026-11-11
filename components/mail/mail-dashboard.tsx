@@ -172,7 +172,7 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
   const handleBatchArchive = useCallback(async () => {
     const ids = Array.from(selectedIds)
     if (ids.length === 0) return
-    await moveToFolder(ids, "archive")
+    await moveToFolder(ids, selectedFolder === "spam" ? "inbox" : "archive")
     setSelectedIds(new Set())
     refreshAll()
   }, [selectedIds, refreshAll])
@@ -278,7 +278,7 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
 
   async function handleArchive() {
     if (!openMessage) return
-    await moveToFolder([openMessage.id], "archive")
+    await moveToFolder([openMessage.id], openMessage.folderType === "spam" ? "inbox" : "archive")
     setSelectedId(null)
     refreshAll()
   }
@@ -350,7 +350,16 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
       case "toggleRead": handleToggleRead(); break
       case "focusSearch": searchRef.current?.focus(); break
       case "compose": openCompose(); break
-      case "goToFolder": setSelectedFolder(action.folder); setSelectedId(null); break
+      case "goToFolder":
+        setSelectedFolder(action.folder)
+        setSelectedCustomFolderId(null)
+        setSelectedSmartFolder(null)
+        setSelectedLabelId(null)
+        setSelectedId(null)
+        setSelectedIds(new Set())
+        setMessagePageCount(1)
+        setSidebarOpen(false)
+        break
     }
   }
 
@@ -399,7 +408,14 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
             selectedFolder={selectedFolder}
             onSelectAccount={(id) => {
               setSelectedAccount(id)
+              setSelectedFolder("inbox")
+              setSelectedCustomFolderId(null)
+              setSelectedSmartFolder(null)
+              setSelectedLabelId(null)
               setSelectedId(null)
+              setSelectedIds(new Set())
+              setFocusedIndex(0)
+              setMessagePageCount(1)
               setSidebarOpen(false)
             }}
             onSelectFolder={(f) => {

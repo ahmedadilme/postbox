@@ -2,7 +2,7 @@
 // are the contract the UI depends on, so a real IMAP/SMTP provider can later
 // produce the same shapes without any UI changes.
 
-export type FolderType = "inbox" | "sent" | "drafts" | "trash" | "archive"
+export type FolderType = "inbox" | "sent" | "drafts" | "trash" | "archive" | "spam"
 
 export type IncomingProtocol = "imap" | "pop3"
 
@@ -92,6 +92,7 @@ export const FOLDERS: { type: FolderType; label: string }[] = [
   { type: "inbox", label: "Inbox" },
   { type: "sent", label: "Sent" },
   { type: "drafts", label: "Drafts" },
+  { type: "spam", label: "Spam" },
   { type: "archive", label: "Archive" },
   { type: "trash", label: "Trash" },
 ]

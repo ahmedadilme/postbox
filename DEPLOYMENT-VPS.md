@@ -94,9 +94,12 @@ BETTER_AUTH_URL=https://postbox.boliflow.com
 BETTER_AUTH_SECRET=64_HEX_CHARACTERS
 ENCRYPTION_KEY=64_HEX_CHARACTERS
 SYNC_CRON_SECRET=64_HEX_CHARACTERS
+ADMIN_EMAILS=admin@yourdomain.com
 ```
 
 `ENCRYPTION_KEY` must be exactly 64 hexadecimal characters. Back it up securely and keep it stable: Postbox uses it to decrypt saved email credentials. Losing or rotating it makes those credentials unusable. Keep `BETTER_AUTH_SECRET` stable to preserve authentication behavior.
+
+Set `ADMIN_EMAILS` to the email address used by your Postbox admin account. You can list multiple addresses separated by commas. Sign up or sign in with one of those addresses to access `/admin`; the match is case-insensitive. After changing the environment file, restart the PM2 web process so it reloads the value.
 
 ## 5. Apply database migrations
 

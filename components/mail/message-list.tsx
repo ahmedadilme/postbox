@@ -12,6 +12,7 @@ const FOLDER_LABELS: Record<FolderType, string> = {
   inbox: "Inbox",
   sent: "Sent",
   drafts: "Drafts",
+  spam: "Spam",
   archive: "Archive",
   trash: "Trash",
 }
@@ -108,8 +109,8 @@ export function MessageList({
         <div className="flex items-center gap-1 border-b border-border bg-accent/30 px-3 py-1.5">
           <span className="mr-2 text-xs text-muted-foreground">{selectedIds.size} selected</span>
           <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={onBatchArchive}>
-            <Archive className="h-3.5 w-3.5" />
-            Archive
+            {selectedFolder === "spam" ? <Inbox className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+            {selectedFolder === "spam" ? "Not spam" : "Archive"}
           </Button>
           <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={onBatchDelete}>
             <Trash2 className="h-3.5 w-3.5" />
@@ -165,7 +166,7 @@ export function MessageList({
                       active && "bg-accent",
                     )}
                   >
-                    {!m.isRead && selectedFolder === "inbox" && (
+                    {!m.isRead && (selectedFolder === "inbox" || selectedFolder === "spam") && (
                       <span className="absolute left-1.5 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-primary" />
                     )}
                     {/* Checkbox for multi-select */}

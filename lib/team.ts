@@ -1,8 +1,9 @@
 import "server-only"
+import { randomUUID } from "node:crypto"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { team, teamMember } from "@/lib/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq, and, sql } from "drizzle-orm"
 import { cookies, headers } from "next/headers"
 
 export interface SessionUser {
@@ -41,18 +42,58 @@ export async function getCurrentTeam(userId: string) {
     .limit(1)
 
   if (row.length === 0) {
-    const [created] = await db
-      .insert(team)
-      .values({ name: "My Team", slug: `team-${userId.slice(0, 8)}` })
-      .returning()
+    const defaultSlug = `team-${userId.slice(0, 8)}`
+    return db.transaction(async (tx) => {
+      // Serialize first-team creation for this slug so concurrent page loads
+      // cannot both create it or claim an orphaned team row.
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${defaultSlug}))`)
 
-    await db.insert(teamMember).values({
-      teamId: created.id,
-      userId,
-      role: "admin",
+      const [membership] = await tx
+        .select({ team })
+        .from(teamMember)
+        .innerJoin(team, eq(teamMember.teamId, team.id))
+        .where(eq(teamMember.userId, userId))
+        .limit(1)
+      if (membership) {
+        if (membership.team.suspended) {
+          throw new Error(`Your account has been suspended. Reason: ${membership.team.suspensionReason ?? "No reason provided"}`)
+        }
+        return membership.team
+      }
+
+      const [existingTeam] = await tx.select().from(team).where(eq(team.slug, defaultSlug)).limit(1)
+      let targetTeam = existingTeam
+      if (targetTeam) {
+        const [existingMember] = await tx
+          .select({ userId: teamMember.userId })
+          .from(teamMember)
+          .where(eq(teamMember.teamId, targetTeam.id))
+          .limit(1)
+        // Reuse the matching orphan left behind by a failed earlier request,
+        // but never attach this user to a team that already has a member.
+        if (existingMember) targetTeam = undefined
+      }
+
+      if (!targetTeam) {
+        const [created] = await tx
+          .insert(team)
+          .values({ name: "My Team", slug: `team-${randomUUID()}` })
+          .returning()
+        targetTeam = created
+      }
+
+      if (targetTeam.suspended) {
+        throw new Error(`Your account has been suspended. Reason: ${targetTeam.suspensionReason ?? "No reason provided"}`)
+      }
+
+      await tx.insert(teamMember).values({
+        teamId: targetTeam.id,
+        userId,
+        role: "admin",
+      })
+
+      return targetTeam
     })
-
-    return created
   }
 
   const t = row[0].team

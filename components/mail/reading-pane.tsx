@@ -27,6 +27,7 @@ import {
   Clock,
   ChevronDown,
   Tag,
+  Inbox,
 } from "lucide-react"
 import { SnoozePicker } from "./snooze-picker"
 import { MessageComments } from "./message-comments"
@@ -110,8 +111,8 @@ export function ReadingPane({
           </>
         )}
         <Separator orientation="vertical" className="mx-1 h-5" />
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onArchive} aria-label="Archive">
-          <Archive className="h-4 w-4" />
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onArchive} aria-label={message.folderType === "spam" ? "Move to inbox" : "Archive"}>
+          {message.folderType === "spam" ? <Inbox className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
         </Button>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onDelete} aria-label="Delete">
           <Trash2 className="h-4 w-4" />
@@ -184,8 +185,8 @@ export function ReadingPane({
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={onArchive}>
-                <Archive className="h-4 w-4" />
-                Archive
+                {message.folderType === "spam" ? <Inbox className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                {message.folderType === "spam" ? "Not spam · move to inbox" : "Archive"}
               </DropdownMenuItem>
               <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={onDelete}>
                 <Trash2 className="h-4 w-4" />

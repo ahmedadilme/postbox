@@ -81,6 +81,7 @@ const FOLDER_MAP: Record<FolderType, string[]> = {
   inbox: ["INBOX"],
   sent: ["Sent", "Sent Items", "[Gmail]/Sent Mail"],
   drafts: ["Drafts", "[Gmail]/Drafts"],
+  spam: ["Spam", "Junk", "Junk Email", "Junk E-mail", "Bulk Mail", "[Gmail]/Spam", "[Google Mail]/Spam"],
   archive: ["Archive", "[Gmail]/All Mail", "All Mail"],
   trash: ["Trash", "Deleted Items", "[Gmail]/Trash"],
 }
@@ -90,6 +91,7 @@ function discoverFolderPath(mailboxes: Awaited<ReturnType<ImapFlow["list"]>>, fo
   const specialUse: Partial<Record<FolderType, string[]>> = {
     sent: ["\\Sent"],
     drafts: ["\\Drafts"],
+    spam: ["\\Junk"],
     archive: ["\\Archive", "\\All"],
     trash: ["\\Trash"],
   }
@@ -432,7 +434,7 @@ export async function syncAllFolders(
   existingUids: { folderPath: string; minUid?: number; maxUid: number }[],
 ): Promise<SyncedMessage[]> {
   const all: SyncedMessage[] = []
-  const folderTypes: FolderType[] = ["inbox", "sent", "drafts", "archive", "trash"]
+  const folderTypes: FolderType[] = ["inbox", "sent", "drafts", "spam", "archive", "trash"]
   // A first sync should show recent mail quickly instead of downloading an
   // entire multi-year mailbox (including every full RFC822 source) in one run.
   const initialSyncUidWindow = 500

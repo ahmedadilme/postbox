@@ -43,6 +43,7 @@ export function useKeyboardShortcuts(
           case "i": handler({ type: "goToFolder", folder: "inbox" }); return
           case "s": handler({ type: "goToFolder", folder: "sent" }); return
           case "d": handler({ type: "goToFolder", folder: "drafts" }); return
+          case "p": handler({ type: "goToFolder", folder: "spam" }); return
           case "a": handler({ type: "goToFolder", folder: "archive" }); return
           case "t": handler({ type: "goToFolder", folder: "trash" }); return
         }

@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils"
 import type { MailAccount, FolderType, FolderCount, MailLabel } from "@/lib/mail/types"
 import { FOLDERS } from "@/lib/mail/types"
 import {
-  Inbox, Send, FileText, Archive, Trash2, Plus, Mail, MoreVertical,
+  Inbox, Send, FileText, Archive, Trash2, ShieldAlert, Plus, Mail, MoreVertical,
   Layers, PenSquare, RefreshCw, AlertCircle, Folder, FolderPlus,
   Star, Paperclip, MailOpen, Clock, Tag, UserCheck,
 } from "lucide-react"
@@ -22,6 +22,7 @@ const FOLDER_ICONS: Record<FolderType, typeof Inbox> = {
   inbox: Inbox,
   sent: Send,
   drafts: FileText,
+  spam: ShieldAlert,
   archive: Archive,
   trash: Trash2,
 }
@@ -119,7 +120,7 @@ export function MailSidebar({
             {FOLDERS.map(({ type, label }) => {
               const Icon = FOLDER_ICONS[type]
               const c = countFor(type)
-              const badge = type === "inbox" ? c?.unread : type === "drafts" ? c?.total : undefined
+              const badge = type === "inbox" || type === "spam" ? c?.unread : type === "drafts" ? c?.total : undefined
               const active = selectedFolder === type && !selectedCustomFolderId && !selectedLabelId && !selectedSmartFolder
               return (
                 <button
