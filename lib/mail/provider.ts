@@ -270,6 +270,17 @@ function parseAddresses(field: unknown): string {
   return ""
 }
 
+function normalizeReceivedAt(value: unknown): Date {
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? new Date() : value
+  }
+  if (typeof value === "string" || typeof value === "number") {
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed
+  }
+  return new Date()
+}
+
 function parseName(field: unknown, fallback: string): string {
   if (!field) return fallback
   if (typeof field === "string") return field
@@ -404,7 +415,7 @@ export async function syncFolder(
           isStarred: flags.has("\\Flagged"),
           isFlagged: flags.has("$PostboxFlagged"),
           hasAttachments: attachmentsList.length > 0,
-          receivedAt: env.date || new Date(),
+          receivedAt: normalizeReceivedAt(env.date),
           attachments: attachmentsList,
         })
       }
@@ -519,7 +530,7 @@ export async function syncAllFolders(
                 isStarred: flags.has("\\Flagged"),
                 isFlagged: flags.has("$PostboxFlagged"),
                 hasAttachments: attachmentsList.length > 0,
-                receivedAt: env.date || new Date(),
+                receivedAt: normalizeReceivedAt(env.date),
                 attachments: attachmentsList,
               })
             }

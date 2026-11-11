@@ -2,6 +2,15 @@ const endpoint = process.env.SYNC_ENDPOINT ?? "http://localhost:3000/api/sync"
 const secret = process.env.SYNC_CRON_SECRET
 const intervalMs = Number(process.env.SYNC_INTERVAL_MS ?? 300_000)
 
+function describeEndpoint(value) {
+  try {
+    const url = new URL(value)
+    return `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ""}${url.pathname}`
+  } catch {
+    return "(invalid SYNC_ENDPOINT)"
+  }
+}
+
 if (!endpoint) throw new Error("SYNC_ENDPOINT is required")
 if (!secret) throw new Error("SYNC_CRON_SECRET is required")
 if (!Number.isSafeInteger(intervalMs) || intervalMs < 60_000) {
@@ -29,7 +38,15 @@ while (true) {
       }))
     }
   } catch (error) {
-    console.error("Scheduled sync request failed", error instanceof Error ? error.message : "Unknown error")
+    const cause = error instanceof Error && error.cause && typeof error.cause === "object"
+      ? error.cause
+      : null
+    console.error("Scheduled sync request failed", JSON.stringify({
+      endpoint: describeEndpoint(endpoint),
+      message: error instanceof Error ? error.message : "Unknown error",
+      cause: cause && "message" in cause ? cause.message : undefined,
+      code: cause && "code" in cause ? cause.code : undefined,
+    }))
   }
 
   await sleep(intervalMs)

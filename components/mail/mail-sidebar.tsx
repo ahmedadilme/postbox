@@ -332,7 +332,7 @@ export function MailSidebar({
                 ) : (
                   <button
                     onClick={(e) => { e.stopPropagation(); onSyncAccount(a.id) }}
-                    className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                    className="shrink-0 text-muted-foreground transition-opacity hover:text-foreground md:pointer-events-none md:opacity-0 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100"
                     aria-label={`Sync ${a.emailAddress}`}
                     title="Sync now"
                   >
@@ -341,7 +341,7 @@ export function MailSidebar({
                 )}
                 <DropdownMenu>
                   <DropdownMenuTrigger
-                    className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                    className="shrink-0 text-muted-foreground transition-opacity hover:text-foreground md:pointer-events-none md:opacity-0 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100"
                     aria-label={`Manage ${a.emailAddress}`}
                   >
                     <MoreVertical className="h-4 w-4" />

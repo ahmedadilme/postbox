@@ -126,3 +126,14 @@ The installed app opens `/`. A signed-in session shows the mailbox there; a sign
 If the new app fails after restart, inspect PM2 logs first. To roll back code, check out the previous known-good revision, reinstall dependencies, rebuild with `/etc/postbox/postbox.env` loaded, and restart both PM2 processes. Restore the database backup only if the update applied a migration that must be rolled back; restoring replaces the current database contents, so confirm the recovery point before doing so.
 
 Keep the database backup and `/etc/postbox/postbox.env` private. The database contains mail, and the environment file contains credentials and encryption keys.
+
+
+cd /home/root/apps/postbox
+git pull --ff-only
+set -a
+. /etc/postbox/postbox.env
+set +a
+npm ci --include=dev
+npm run build
+pm2 restart postbox-web --update-env
+pm2 save
