@@ -100,10 +100,11 @@ SYNC_CRON_SECRET=64_HEX_CHARACTERS
 
 ## 5. Apply database migrations
 
-The app does not run migrations on startup. For a new database, apply all migrations through `0011` in numeric order:
+The app does not run migrations on startup. Apply all migrations through `0011` in numeric order. Stop immediately on the first error so later migrations do not run against a partial schema:
 
 ```bash
 cd "/home/$DEPLOY_USER/apps/postbox"
+set -e
 set -a
 . /etc/postbox/postbox.env
 set +a
@@ -113,7 +114,7 @@ for migration in lib/db/migrations/*.sql; do
 done
 ```
 
-For an existing database, take a backup and apply only migrations that have not already been run. Do not blindly re-run non-idempotent migrations.
+The `0000_initial.sql` migration creates and repairs the tenant tables and `teamId` columns required by later migrations. If an earlier attempt printed errors such as `relation "team" does not exist`, update the checkout to a revision containing that repair, then rerun the loop above. The current migration files are safe to rerun after a partial first attempt. For a database that already contains production data, take a backup before applying schema changes.
 
 ## 6. Install dependencies and build
 
