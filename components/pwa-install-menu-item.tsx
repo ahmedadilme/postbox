@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 import { Download } from "lucide-react"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
@@ -10,7 +10,14 @@ type InstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>
 }
 
-export function PwaInstallMenuItem() {
+type PwaInstallContextValue = {
+  installed: boolean
+  install: () => Promise<void>
+}
+
+const PwaInstallContext = createContext<PwaInstallContextValue | null>(null)
+
+export function PwaInstallProvider({ children }: { children: ReactNode }) {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState(false)
 
@@ -30,11 +37,18 @@ export function PwaInstallMenuItem() {
       setInstallPrompt(event as InstallPromptEvent)
     }
 
-    window.addEventListener("beforeinstallprompt", handleInstallPrompt)
-    return () => window.removeEventListener("beforeinstallprompt", handleInstallPrompt)
-  }, [])
+    function handleInstalled() {
+      setInstalled(true)
+      setInstallPrompt(null)
+    }
 
-  if (installed) return null
+    window.addEventListener("beforeinstallprompt", handleInstallPrompt)
+    window.addEventListener("appinstalled", handleInstalled)
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleInstallPrompt)
+      window.removeEventListener("appinstalled", handleInstalled)
+    }
+  }, [])
 
   async function install() {
     if (!installPrompt) {
@@ -48,8 +62,15 @@ export function PwaInstallMenuItem() {
     if (choice.outcome === "accepted") setInstalled(true)
   }
 
+  return <PwaInstallContext.Provider value={{ installed, install }}>{children}</PwaInstallContext.Provider>
+}
+
+export function PwaInstallMenuItem() {
+  const pwa = useContext(PwaInstallContext)
+  if (!pwa || pwa.installed) return null
+
   return (
-    <DropdownMenuItem onClick={() => void install()}>
+    <DropdownMenuItem onClick={() => void pwa.install()}>
       <Download className="h-4 w-4" />
       Install Postbox
     </DropdownMenuItem>

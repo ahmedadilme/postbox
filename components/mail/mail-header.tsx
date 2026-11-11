@@ -15,7 +15,7 @@ import { authClient } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
 import { initials } from "@/lib/mail/format"
 import { LogOut, Settings, Plus, ExternalLink } from "lucide-react"
-import { PwaInstallMenuItem } from "@/components/pwa-install-menu-item"
+import { PwaInstallMenuItem, PwaInstallProvider } from "@/components/pwa-install-menu-item"
 
 export function MailHeader({
   userName,
@@ -37,6 +37,7 @@ export function MailHeader({
   }
 
   return (
+    <PwaInstallProvider>
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-background px-4">
       <div className="text-sm text-muted-foreground">
         Signed in as <span className="font-medium text-foreground">{userEmail}</span>
@@ -85,5 +86,6 @@ export function MailHeader({
         </DropdownMenu>
       </div>
     </header>
+    </PwaInstallProvider>
   )
 }
