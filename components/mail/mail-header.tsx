@@ -15,6 +15,7 @@ import { authClient } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
 import { initials } from "@/lib/mail/format"
 import { LogOut, Settings, Plus, ExternalLink } from "lucide-react"
+import { PwaInstallMenuItem } from "@/components/pwa-install-menu-item"
 
 export function MailHeader({
   userName,
@@ -74,6 +75,7 @@ export function MailHeader({
               <ExternalLink className="h-4 w-4" />
               Manage accounts
             </DropdownMenuItem>
+            <PwaInstallMenuItem />
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
               <LogOut className="h-4 w-4" />
