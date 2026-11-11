@@ -1,5 +1,1 @@
-import { redirect } from "next/navigation"
-
-export default async function AppPage() {
-  redirect("/")
-}
+export { default } from "@/app/page"
