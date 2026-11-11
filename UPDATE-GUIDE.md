@@ -95,7 +95,7 @@ curl -I https://postbox.boliflow.com/icon-192.png
 curl -I https://postbox.boliflow.com/icon-512.png
 ```
 
-Then sign in on the phone and use **Install Postbox** in the account menu. On iPhone or iPad, use **Share → Add to Home Screen**. The installed icon should open `/app`; the landing page remains available at `/`.
+Then sign in on the phone and use **Install Postbox** in the account menu. On iPhone or iPad, use **Share → Add to Home Screen**. The installed icon opens `/`, which shows the mailbox when signed in and the landing page when signed out. `/app` redirects to `/` for compatibility.
 
 ## Rollback notes
 

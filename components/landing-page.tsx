@@ -31,15 +31,15 @@ export function LandingPage() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1 text-xs text-muted-foreground">
             <Zap className="h-3 w-3" />
-            A simpler way to manage multiple inboxes
+            A unified mail dashboard for work and business
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-6xl">
-            Your unified inbox.
+            All your email accounts.
             <br />
-            <span className="text-primary">Your mail, in one place.</span>
+            <span className="text-primary">One dashboard. Every device.</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground md:text-xl">
-            Connect mail accounts that provide IMAP and SMTP access, then read and send mail from one dashboard.
+            Connect your supported IMAP and SMTP accounts once. Read, send, and organize mail from one unified dashboard on any device, without setting up a separate mail client on every computer or phone.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
@@ -87,8 +87,8 @@ export function LandingPage() {
         />
         <FeatureCard
           icon={<Users className="h-5 w-5" />}
-          title="Multiple accounts"
-          desc="Keep work, personal, and other connected inboxes together in one dashboard."
+          title="One setup, access everywhere"
+          desc="Add each mail account once in Postbox, then access your unified inbox from the devices you use. No separate mail-client setup on every device."
         />
         <FeatureCard
           icon={<Mail className="h-5 w-5" />}

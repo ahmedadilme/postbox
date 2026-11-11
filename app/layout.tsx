@@ -6,7 +6,7 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Postbox — Unified Mail Dashboard',
   description:
-    'Manage multiple IMAP/POP3 email accounts in one place. Read, send, organize, and search your mail from a single dashboard.',
+    'A unified mail dashboard for small businesses. Connect supported IMAP and SMTP accounts once, then access your inbox from any device without setting up a separate mail client on each one.',
   generator: 'v0.app',
   icons: {
     icon: [

@@ -2,11 +2,11 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    id: "/app",
+    id: "/",
     name: "Postbox — Unified Mail Dashboard",
     short_name: "Postbox",
     description: "Read and organize your connected mail accounts in Postbox.",
-    start_url: "/app",
+    start_url: "/",
     scope: "/",
     display: "standalone",
     display_override: ["standalone", "minimal-ui"],
