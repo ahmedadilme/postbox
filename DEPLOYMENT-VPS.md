@@ -265,23 +265,6 @@ Create a Postbox user, sign in, add a mail account, and confirm the initial sync
 
 For the step-by-step update procedure used by the current `/home/root/apps/postbox` deployment, see [UPDATE-GUIDE.md](UPDATE-GUIDE.md). It covers a database backup, `git pull --ff-only`, dependency install/build, new migrations, PM2 restart, and PWA endpoint checks.
 
-Back up PostgreSQL, update the checkout, build with the production environment, apply only new migrations, and restart both PM2 processes:
-
-```bash
-cd "/home/$DEPLOY_USER/apps/postbox"
-git fetch --all --tags
-git checkout YOUR_RELEASE
-set -a
-. /etc/postbox/postbox.env
-set +a
-npm ci --include=dev
-npm run build
-# Apply only migrations added since the last deployment.
-pm2 restart ecosystem.config.cjs --update-env
-pm2 save
-pm2 status
-```
-
 Back up PostgreSQL regularly and test restoring it. Back up `/etc/postbox/postbox.env` securely, especially `ENCRYPTION_KEY`. Database backups and synchronized email contain sensitive data.
 
 ## Operational notes
