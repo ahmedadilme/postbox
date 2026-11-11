@@ -117,6 +117,19 @@ export const teamAuditLog = pgTable("team_audit_log", {
   createdAt: timestamp("createdAt").notNull().defaultNow(),
 }, (table) => [index("team_audit_log_team_created_idx").on(table.teamId, table.createdAt)])
 
+export const planUpgradeRequest = pgTable("plan_upgrade_request", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  teamId: uuid("teamId").notNull().references(() => team.id, { onDelete: "cascade" }),
+  requestedBy: text("requestedBy").notNull().references(() => user.id, { onDelete: "cascade" }),
+  requestedPlan: text("requestedPlan").notNull(),
+  message: text("message"),
+  status: text("status").notNull().default("pending"),
+  reviewedBy: text("reviewedBy").references(() => user.id, { onDelete: "set null" }),
+  adminNotes: text("adminNotes"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  reviewedAt: timestamp("reviewedAt"),
+}, (table) => [index("plan_upgrade_request_team_status_created_idx").on(table.teamId, table.status, table.createdAt)])
+
 // ---------------------------------------------------------------------------
 // App tables (scoped per team via teamId)
 // ---------------------------------------------------------------------------

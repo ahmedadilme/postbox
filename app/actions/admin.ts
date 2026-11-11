@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/lib/db"
-import { user, team, teamMember, mailAccount, message, auditLog } from "@/lib/db/schema"
+import { user, team, teamMember, mailAccount, message, auditLog, planUpgradeRequest } from "@/lib/db/schema"
 import { eq, sql, desc, count, and, isNull } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { requireAdmin, logAdminAction } from "@/lib/admin"
@@ -135,8 +135,90 @@ export async function adminGetTeamDetail(teamId: string) {
 export async function adminSetTeamPlan(teamId: string, plan: string) {
   const admin = await requireAdmin()
   const [t] = await db.select({ plan: team.plan }).from(team).where(eq(team.id, teamId)).limit(1)
+  if (!t) throw new Error("Team not found")
+  if (!PLANS.some((availablePlan) => availablePlan.id === plan)) throw new Error("Unknown plan")
   await db.update(team).set({ plan }).where(eq(team.id, teamId))
-  await logAdminAction(admin.id, "change_plan", "team", teamId, { from: t?.plan, to: plan })
+  await logAdminAction(admin.id, "change_plan", "team", teamId, { from: t.plan, to: plan })
+  revalidatePath("/admin")
+}
+
+export async function adminListPlanUpgradeRequests() {
+  await requireAdmin()
+  const rows = await db
+    .select({
+      id: planUpgradeRequest.id,
+      teamId: planUpgradeRequest.teamId,
+      teamName: team.name,
+      currentPlan: team.plan,
+      requestedPlan: planUpgradeRequest.requestedPlan,
+      message: planUpgradeRequest.message,
+      status: planUpgradeRequest.status,
+      createdAt: planUpgradeRequest.createdAt,
+      requesterName: user.name,
+      requesterEmail: user.email,
+    })
+    .from(planUpgradeRequest)
+    .innerJoin(team, eq(team.id, planUpgradeRequest.teamId))
+    .innerJoin(user, eq(user.id, planUpgradeRequest.requestedBy))
+    .orderBy(desc(planUpgradeRequest.createdAt))
+    .limit(200)
+  return rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }))
+}
+
+export async function adminResolvePlanUpgradeRequest(
+  requestId: string,
+  decision: "approved" | "rejected",
+  adminNotes?: string,
+) {
+  const admin = await requireAdmin()
+  if (decision !== "approved" && decision !== "rejected") throw new Error("Invalid review decision")
+  if (adminNotes !== undefined && typeof adminNotes !== "string") throw new Error("Invalid admin notes")
+  const notes = adminNotes?.trim() ?? ""
+  if (notes.length > 1000) throw new Error("Admin notes must be 1,000 characters or fewer")
+
+  const resolved = await db.transaction(async (tx) => {
+    const [request] = await tx
+      .select()
+      .from(planUpgradeRequest)
+      .where(eq(planUpgradeRequest.id, requestId))
+      .limit(1)
+      .for("update")
+    if (!request) throw new Error("Upgrade request not found")
+    if (request.status !== "pending") throw new Error("This upgrade request has already been reviewed")
+
+    const [targetTeam] = await tx
+      .select({ plan: team.plan })
+      .from(team)
+      .where(eq(team.id, request.teamId))
+      .limit(1)
+      .for("update")
+    if (!targetTeam) throw new Error("Team not found")
+
+    if (decision === "approved") {
+      if (!PLANS.some((availablePlan) => availablePlan.id === request.requestedPlan && (availablePlan.id === "pro" || availablePlan.id === "team"))) {
+        throw new Error("The requested plan is no longer available")
+      }
+      await tx.update(team).set({ plan: request.requestedPlan, updatedAt: new Date() }).where(eq(team.id, request.teamId))
+    }
+
+    await tx.update(planUpgradeRequest).set({
+      status: decision,
+      reviewedBy: admin.id,
+      adminNotes: notes || null,
+      reviewedAt: new Date(),
+    }).where(eq(planUpgradeRequest.id, request.id))
+
+    return { teamId: request.teamId, fromPlan: targetTeam.plan, requestedPlan: request.requestedPlan }
+  })
+
+  await logAdminAction(admin.id, `plan_upgrade_${decision}`, "plan_upgrade_request", requestId, {
+    teamId: resolved.teamId,
+    fromPlan: resolved.fromPlan,
+    requestedPlan: resolved.requestedPlan,
+    notes: notes || null,
+  })
+  revalidatePath("/admin/upgrade-requests")
+  revalidatePath("/admin/teams")
   revalidatePath("/admin")
 }
 

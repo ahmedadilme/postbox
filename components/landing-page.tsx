@@ -39,7 +39,7 @@ export function LandingPage() {
             <span className="text-primary">Your mail, in one place.</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground md:text-xl">
-            Connect Gmail, Outlook, and other IMAP accounts, then read and send mail from one dashboard.
+            Connect mail accounts that provide IMAP and SMTP access, then read and send mail from one dashboard.
           </p>
           <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
@@ -57,9 +57,9 @@ export function LandingPage() {
       <section className="border-y border-border bg-muted/30 py-8">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-8 px-6 text-sm text-muted-foreground">
           <span className="font-medium">Works with</span>
-          <span>Gmail</span>
-          <span>Outlook</span>
           <span>IMAP</span>
+          <span>SMTP</span>
+          <span>Custom mail servers</span>
         </div>
       </section>
 
@@ -95,6 +95,36 @@ export function LandingPage() {
           title="Smart Organization"
           desc="Use custom folders, smart folders, snooze, stars, and bulk actions to organize your messages."
         />
+      </section>
+
+      <section className="border-y border-border bg-muted/20 px-6 py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">Straightforward plans for growing teams</h2>
+            <p className="mt-3 text-muted-foreground">Start free, then add the features your business needs.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm font-medium text-muted-foreground">Free</p>
+              <p className="mt-2 text-3xl font-bold text-foreground">$0 <span className="text-sm font-normal text-muted-foreground">forever</span></p>
+              <p className="mt-2 text-sm text-muted-foreground">Two accounts, five folders, and seven days of mail history.</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <p className="text-sm font-medium text-muted-foreground">Pro</p>
+              <p className="mt-2 text-3xl font-bold text-foreground">$4 <span className="text-sm font-normal text-muted-foreground">/ month</span></p>
+              <p className="mt-2 text-sm text-muted-foreground">More accounts, full history, and advanced organization for one user.</p>
+            </div>
+            <div className="rounded-xl border border-primary bg-primary/5 p-5">
+              <p className="text-sm font-medium text-muted-foreground">Team</p>
+              <p className="mt-2 text-3xl font-bold text-foreground">$6 <span className="text-sm font-normal text-muted-foreground">/ member / month</span></p>
+              <p className="mt-2 text-sm text-muted-foreground">Shared drafts, comments, assignments, and collaboration for small teams.</p>
+            </div>
+          </div>
+          <div className="mt-7 text-center">
+            <Link href="/pricing" className="text-sm font-medium text-primary hover:underline">See plans and request an upgrade</Link>
+            <p className="mt-2 text-xs text-muted-foreground">Paid plans are activated by request during early access. No charge is taken online.</p>
+          </div>
+        </div>
       </section>
 
       {/* CTA */}

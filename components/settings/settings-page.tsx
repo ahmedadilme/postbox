@@ -4,8 +4,11 @@ import { useState } from "react"
 import useSWR from "swr"
 import { getMemberRoleInfo, getMembers, getTeamAuditLog, updateTeam, inviteMember, removeMember } from "@/app/actions/team"
 import { getAccounts } from "@/app/actions/accounts"
+import { getMyPlanUpgradeRequest } from "@/app/actions/upgrade-requests"
 import { getPlan } from "@/lib/billing/plans"
+import { PLANS } from "@/lib/billing/plans"
 import { can, type Role } from "@/lib/permissions"
+import { PlanRequestButton } from "@/components/pricing/plan-request-button"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -73,7 +76,7 @@ export function SettingsPage() {
           {tab === "members" && (
             <MembersTab role={role} members={members} team={team} mutateMembers={mutateMembers} />
           )}
-          {tab === "billing" && <BillingTab team={team} plan={plan} />}
+          {tab === "billing" && <BillingTab role={role} team={team} plan={plan} />}
           {tab === "accounts" && <AccountsTab accounts={accounts} />}
           {tab === "audit" && role === "admin" && <AuditTab logs={auditLogs} loading={auditLogsLoading} />}
         </div>
@@ -91,6 +94,7 @@ function AuditTab({ logs, loading }: { logs: Awaited<ReturnType<typeof getTeamAu
     account_removed: "Removed an email account",
     draft_shared: "Shared a draft",
     draft_unshared: "Stopped sharing a draft",
+    plan_upgrade_requested: "Requested a plan upgrade",
   }
 
   return (
@@ -282,13 +286,21 @@ function MembersTab({
 }
 
 function BillingTab({
+  role,
   team,
   plan,
 }: {
+  role: Role
   team: { id: string; plan: string; name: string } | undefined
   plan: { id: string; name: string; price: number } | null
 }) {
+  const { data: pendingRequest, mutate: mutateRequest } = useSWR(team ? ["plan-upgrade-request", team.id] : null, () => getMyPlanUpgradeRequest())
   if (!team || !plan) return null
+
+  const planRank: Record<string, number> = { free: 0, pro: 1, team: 2, enterprise: 3 }
+  const upgradeOptions = PLANS.filter((candidate) =>
+    (candidate.id === "pro" || candidate.id === "team") && (planRank[candidate.id] ?? -1) > (planRank[plan.id] ?? 0),
+  )
 
   return (
     <div className="mx-auto max-w-lg">
@@ -296,7 +308,7 @@ function BillingTab({
       <p className="mb-6 text-sm text-muted-foreground">Manage your subscription and plan.</p>
 
       <p className="mb-6 rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
-        Paid plan checkout is not available yet. Your current plan remains active.
+        Paid plans are activated by request during early access. There is no automatic charge.
       </p>
 
       <Card className="mb-6 p-6">
@@ -313,11 +325,25 @@ function BillingTab({
         </div>
       </Card>
 
-      {plan.id === "free" && (
-        <p className="text-sm text-muted-foreground">
-          Message history on the free plan is limited to 7 days. Paid plans are not available yet.
-        </p>
-      )}
+      {pendingRequest ? (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+          <p className="font-medium text-foreground">Upgrade request pending</p>
+          <p className="mt-1 text-muted-foreground">Your request for the {getPlan(pendingRequest.requestedPlan).name} plan was sent to the Postbox admin on {new Date(pendingRequest.createdAt).toLocaleDateString()}.</p>
+        </div>
+      ) : upgradeOptions.length > 0 ? (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Choose an upgrade. A team admin can request changes, and the Postbox admin will review it.</p>
+          {role === "admin" ? upgradeOptions.map((option) => (
+            <div key={option.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-3">
+              <div>
+                <p className="text-sm font-medium text-foreground">{option.name}</p>
+                <p className="text-xs text-muted-foreground">${(option.price / 100).toFixed(0)}{option.id === "team" ? " per member" : ""} / month</p>
+              </div>
+              <PlanRequestButton planId={option.id} signedIn onRequested={() => { void mutateRequest() }} />
+            </div>
+          )) : <p className="rounded-lg border border-border p-3 text-sm text-muted-foreground">Ask a team admin to request a plan change.</p>}
+        </div>
+      ) : null}
     </div>
   )
 }

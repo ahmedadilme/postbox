@@ -32,7 +32,7 @@ export function OnboardingOverlay({ userName, onComplete, onSkip, onAccountAdded
     },
     {
       title: "Connect your email",
-      subtitle: "Add your first email account to get started. We support Gmail, Outlook, Yahoo, and any IMAP provider.",
+      subtitle: "Add an account that allows IMAP and SMTP access. Some providers require an app password.",
       icon: <Zap className="h-8 w-8" />,
     },
     {
@@ -151,10 +151,7 @@ export function OnboardingOverlay({ userName, onComplete, onSkip, onAccountAdded
                 required
               />
               <p className="text-xs text-muted-foreground">
-                For Gmail, use an{' '}
-                <a href="https://support.google.com/accounts/answer/185833" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                  App Password
-                </a>. Your credentials are encrypted.
+                Use an app password instead of your regular password if your mail provider requires one. Your credentials are encrypted.
               </p>
             </div>
             <div className="flex gap-2">

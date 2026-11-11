@@ -3,12 +3,13 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, Building2, ArrowLeft, ScrollText } from "lucide-react"
+import { LayoutDashboard, Users, Building2, ArrowLeft, ScrollText, ClipboardList } from "lucide-react"
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/teams", label: "Teams", icon: Building2 },
+  { href: "/admin/upgrade-requests", label: "Upgrade Requests", icon: ClipboardList },
   { href: "/admin/audit-log", label: "Audit Log", icon: ScrollText },
 ]
 

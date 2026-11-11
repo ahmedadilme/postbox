@@ -10,6 +10,8 @@ const ACTION_LABELS: Record<string, string> = {
   toggle_feature: "Toggled feature",
   clear_feature_override: "Cleared feature override",
   delete_team: "Deleted team",
+  plan_upgrade_approved: "Approved plan upgrade",
+  plan_upgrade_rejected: "Declined plan upgrade",
 }
 
 export default function AuditLogPage() {

@@ -18,7 +18,7 @@ export const PLANS: PlanDef[] = [
   {
     id: "pro",
     name: "Pro",
-    price: 1000, // $10 in cents
+    price: 400, // $4 per user/month in cents
     currency: "usd",
     interval: "month",
     limits: {
@@ -32,7 +32,7 @@ export const PLANS: PlanDef[] = [
   {
     id: "team",
     name: "Team",
-    price: 1500, // $15 per user/month in cents
+    price: 600, // $6 per user/month in cents
     currency: "usd",
     interval: "month",
     limits: {
