@@ -15,7 +15,7 @@ git status --short
 pm2 status
 ```
 
-If `git status` shows local changes, review and preserve them before pulling. Record the current revision, load the production database URL, and make a compressed database backup:
+If `git status` shows `?? ecosystem.config.cjs`, that is the server-local PM2 configuration created during setup. Keep it untracked; do not delete it, run `git clean`, or add it to the application commit. Other local changes should be reviewed before pulling. Record the current revision and pull the pushed update:
 
 ```bash
 OLD_REV=$(git rev-parse HEAD)
@@ -52,11 +52,14 @@ npm run build
 
 Do not restart PM2 if install or build fails. The running app should continue using its existing process until the new build succeeds. npm audit and funding notices do not by themselves mean the build failed; look for the final successful build summary.
 
+For the PWA release, the route summary must include `/app` and `/manifest.webmanifest`. If either is missing, stop: this checkout/build does not contain the PWA changes. Confirm `git pull --ff-only` fetched the commit you pushed before continuing.
+
 ## 3. Apply new database migrations, if any
 
 List migration files added by this update:
 
 ```bash
+if [ -z "${OLD_REV:-}" ]; then echo "OLD_REV is not set. Record the previous commit before pulling, then keep this SSH session open through this step."; exit 1; fi
 git diff --name-only --diff-filter=A "$OLD_REV" HEAD -- 'lib/db/migrations/*.sql'
 ```
 

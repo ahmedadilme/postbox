@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -113,7 +112,7 @@ export function MailSidebar({
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
         <div className="px-3 pb-4">
           {/* Standard folders */}
           <nav className="flex flex-col gap-0.5">
@@ -167,7 +166,6 @@ export function MailSidebar({
                   key={type}
                   onClick={() => {
                     onSelectSmartFolder(selectedSmartFolder === type ? null : type)
-                    if (selectedSmartFolder !== type) onSelectFolder("inbox")
                   }}
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
@@ -372,7 +370,7 @@ export function MailSidebar({
             )}
           </div>
         </div>
-      </ScrollArea>
+      </div>
     </aside>
   )
 }

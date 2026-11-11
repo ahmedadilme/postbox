@@ -263,7 +263,26 @@ export async function listMessages(opts: {
   }
   const pageSize = Math.min(Math.max(opts.limit ?? 50, 1), 100)
   const rows = await db
-    .select()
+    .select({
+      id: message.id,
+      accountId: message.accountId,
+      folderType: message.folderType,
+      fromName: message.fromName,
+      fromAddress: message.fromAddress,
+      toAddresses: message.toAddresses,
+      ccAddresses: message.ccAddresses,
+      subject: message.subject,
+      preview: message.preview,
+      isRead: message.isRead,
+      isStarred: message.isStarred,
+      isFlagged: message.isFlagged,
+      hasAttachments: message.hasAttachments,
+      snoozedUntil: message.snoozedUntil,
+      draftShared: message.draftShared,
+      draftRevision: message.draftRevision,
+      userId: message.userId,
+      receivedAt: message.receivedAt,
+    })
     .from(message)
     .where(and(...conds))
     .orderBy(desc(message.receivedAt), desc(message.id))
@@ -295,7 +314,31 @@ export async function listMessages(opts: {
     : []
   const assignmentsByMessage = new Map(assignmentRows.map((item) => [item.messageId, { userId: item.userId, name: item.name, email: item.email }]))
   return {
-    messages: pageRows.map((row) => ({ ...toMail(row), body: "", htmlBody: null, canManageDraftSharing: row.userId === user.id, labels: labelsByMessage.get(row.id) ?? [], assignment: assignmentsByMessage.get(row.id) ?? null })),
+    messages: pageRows.map((row) => ({
+      id: row.id,
+      accountId: row.accountId,
+      folderType: row.folderType as FolderType,
+      fromName: row.fromName,
+      fromAddress: row.fromAddress,
+      toAddresses: row.toAddresses,
+      ccAddresses: row.ccAddresses,
+      subject: row.subject,
+      preview: row.preview,
+      body: "",
+      htmlBody: null,
+      isRead: row.isRead,
+      isStarred: row.isStarred,
+      isFlagged: row.isFlagged,
+      hasAttachments: row.hasAttachments,
+      snoozedUntil: row.snoozedUntil?.toISOString() ?? null,
+      draftShared: row.draftShared,
+      draftRevision: row.draftRevision,
+      draftOwnerId: row.userId,
+      canManageDraftSharing: row.userId === user.id,
+      receivedAt: row.receivedAt.toISOString(),
+      labels: labelsByMessage.get(row.id) ?? [],
+      assignment: assignmentsByMessage.get(row.id) ?? null,
+    })),
     nextCursor: hasNextPage && lastRow
       ? { receivedAt: lastRow.receivedAt.toISOString(), id: lastRow.id }
       : null,

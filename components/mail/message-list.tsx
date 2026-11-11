@@ -30,6 +30,7 @@ export function MessageList({
   selectedId,
   search,
   loading,
+  loadError,
   onSearch,
   onSelect,
   onToggleStar,
@@ -55,6 +56,7 @@ export function MessageList({
   selectedId: number | null
   search: string
   loading: boolean
+  loadError?: boolean
   onSearch: (q: string) => void
   onSelect: (m: MailMessage) => void
   onToggleStar: (m: MailMessage) => void
@@ -144,7 +146,14 @@ export function MessageList({
       )}
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        {messages.length === 0 ? (
+        {loadError ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+            <Inbox className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">Couldn’t load this folder</p>
+            <p className="text-xs text-muted-foreground">Check your connection, then try again.</p>
+            <Button variant="outline" size="sm" onClick={onRefresh}>Retry</Button>
+          </div>
+        ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
             <Inbox className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm font-medium text-foreground">No messages</p>

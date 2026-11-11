@@ -74,6 +74,7 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
   )
   const {
     data: messagePages,
+    error: messageError,
     isLoading,
     isValidating: isLoadingMore,
     size: messagePageCount,
@@ -424,6 +425,8 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
               setSelectedFolder(f)
               setSelectedCustomFolderId(null)
               setSelectedId(null)
+              setSelectedIds(new Set())
+              setMessagePageCount(1)
               setSidebarOpen(false)
             }}
             onCompose={() => {
@@ -443,7 +446,11 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
               setSelectedLabelId(null)
               setSelectedSmartFolder(type)
               setSelectedCustomFolderId(null)
+              setSelectedFolder("inbox")
               setSelectedId(null)
+              setSelectedIds(new Set())
+              setMessagePageCount(1)
+              setSidebarOpen(false)
             }}
             onSelectCustomFolder={handleSelectCustomFolder}
             onCreateFolder={() => setFolderDialogOpen(true)}
@@ -480,6 +487,7 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
             selectedId={selectedId}
             search={search}
             loading={isLoading}
+            loadError={Boolean(messageError)}
             onSearch={setSearch}
             onSelect={handleSelectMessage}
             onToggleStar={handleToggleStarInList}
