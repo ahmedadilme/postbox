@@ -247,6 +247,94 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
     })
   }
 
+  async function handleContextReply(message: MailMessage) {
+    try {
+      const fullMessage = await getMessage(message.id)
+      if (!fullMessage) throw new Error("This message is no longer available")
+      openCompose({
+        accountId: fullMessage.accountId,
+        to: fullMessage.fromAddress,
+        subject: fullMessage.subject.startsWith("Re:") ? fullMessage.subject : `Re: ${fullMessage.subject}`,
+        body: quotePrefix(fullMessage),
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open a reply")
+    }
+  }
+
+  async function handleContextSetRead(message: MailMessage) {
+    try {
+      await setRead(message.id, !message.isRead)
+      await Promise.all([mutateMessages(), mutateCounts()])
+      if (message.id === selectedId) await mutateOpen()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update message status")
+    }
+  }
+
+  async function handleContextReplyAll(message: MailMessage) {
+    try {
+      const fullMessage = await getMessage(message.id)
+      if (!fullMessage) throw new Error("This message is no longer available")
+      const cc = [fullMessage.toAddresses, fullMessage.ccAddresses].filter(Boolean).join(", ")
+      openCompose({
+        accountId: fullMessage.accountId,
+        to: fullMessage.fromAddress,
+        cc,
+        subject: fullMessage.subject.startsWith("Re:") ? fullMessage.subject : `Re: ${fullMessage.subject}`,
+        body: quotePrefix(fullMessage),
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not open reply all")
+    }
+  }
+
+  async function handleContextForward(message: MailMessage) {
+    try {
+      const fullMessage = await getMessage(message.id)
+      if (!fullMessage) throw new Error("This message is no longer available")
+      openCompose({
+        accountId: fullMessage.accountId,
+        subject: fullMessage.subject.startsWith("Fwd:") ? fullMessage.subject : `Fwd: ${fullMessage.subject}`,
+        body: quotePrefix(fullMessage),
+      })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not forward message")
+    }
+  }
+
+  async function handleContextMove(message: MailMessage, destination: FolderType) {
+    try {
+      await moveToFolder([message.id], destination)
+      if (message.id === selectedId) setSelectedId(null)
+      refreshAll()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not move message")
+    }
+  }
+
+  async function handleContextToggleLabel(messageId: number, labelId: number, add: boolean) {
+    try {
+      await toggleLabelOnMessage(messageId, labelId, add)
+      if (messageId === selectedId) mutateOpen()
+      mutateMessages()
+      toast.success(add ? "Label applied" : "Label removed")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update label")
+    }
+  }
+
+  async function handleContextDelete(message: MailMessage) {
+    try {
+      if (message.folderType === "trash") await deleteForever([message.id])
+      else await moveToFolder([message.id], "trash")
+      if (message.id === selectedId) setSelectedId(null)
+      refreshAll()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete message")
+    }
+  }
+
   function handleReplyAll() {
     if (!openMessage) return
     const cc = [openMessage.toAddresses, openMessage.ccAddresses].filter(Boolean).join(", ")
@@ -499,6 +587,15 @@ export function MailDashboard({ user, needsOnboarding }: { user: { name: string;
             onSearch={setSearch}
             onSelect={handleSelectMessage}
             onToggleStar={handleToggleStarInList}
+            onReply={handleContextReply}
+            onReplyAll={handleContextReplyAll}
+            onForward={handleContextForward}
+            onSetRead={handleContextSetRead}
+            onMoveMessage={handleContextMove}
+            onArchiveMessage={(message) => void handleContextMove(message, "archive")}
+            onNotSpam={(message) => void handleContextMove(message, "inbox")}
+            onDeleteMessage={handleContextDelete}
+            onToggleLabel={handleContextToggleLabel}
             onRefresh={refreshAll}
             onOpenMenu={() => setSidebarOpen(true)}
             searchRef={searchRef}

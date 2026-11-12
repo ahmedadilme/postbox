@@ -28,8 +28,21 @@ export function useKeyboardShortcuts(
     let gPressed = false
 
     function onKeyDown(e: KeyboardEvent) {
-      const target = e.target as HTMLElement
-      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable
+      // Never intercept browser or OS combinations (e.g. Ctrl+C to copy, Ctrl+A to select all, Cmd+C, etc.)
+      if (e.ctrlKey || e.metaKey || e.altKey) {
+        return
+      }
+
+      const target = e.target as HTMLElement | null
+      const isInput =
+        Boolean(
+          target &&
+          (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.tagName === "SELECT" ||
+            target.isContentEditable ||
+            target.closest?.("[contenteditable='true']"))
+        )
 
       if (e.key === "g" && !isInput) {
         gPressed = true
@@ -39,7 +52,7 @@ export function useKeyboardShortcuts(
 
       if (gPressed) {
         gPressed = false
-        switch (e.key) {
+        switch (e.key.toLowerCase()) {
           case "i": handler({ type: "goToFolder", folder: "inbox" }); return
           case "s": handler({ type: "goToFolder", folder: "sent" }); return
           case "d": handler({ type: "goToFolder", folder: "drafts" }); return
@@ -51,8 +64,8 @@ export function useKeyboardShortcuts(
       }
 
       if (isInput) {
-        if (e.key === "Escape") {
-          (target as HTMLElement).blur()
+        if (e.key === "Escape" && target) {
+          target.blur()
         }
         return
       }
@@ -65,7 +78,7 @@ export function useKeyboardShortcuts(
         case "f": handler({ type: "forward" }); break
         case "e": handler({ type: "archive" }); break
         case "#":
-        case "d": handler({ type: "delete" }); break
+        case "Delete": handler({ type: "delete" }); break
         case "s": handler({ type: "star" }); break
         case "u": handler({ type: "toggleRead" }); break
         case "/":

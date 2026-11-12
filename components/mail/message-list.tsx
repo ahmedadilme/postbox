@@ -3,10 +3,40 @@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
+  ContextMenuLabel,
+} from "@/components/ui/context-menu"
 import { cn } from "@/lib/utils"
 import type { MailMessage, MailAccount, FolderType, MailLabel } from "@/lib/mail/types"
 import { formatListDate, initials } from "@/lib/mail/format"
-import { Star, Paperclip, Flag, Search, RefreshCw, Inbox, Menu, Archive, Trash2, MailOpen, Tag } from "lucide-react"
+import {
+  Star,
+  Paperclip,
+  Flag,
+  Search,
+  RefreshCw,
+  Inbox,
+  Menu,
+  Archive,
+  Trash2,
+  Mail,
+  MailOpen,
+  Tag,
+  Reply,
+  ReplyAll,
+  Forward,
+  ShieldCheck,
+  ShieldAlert,
+  Check,
+} from "lucide-react"
 
 const FOLDER_LABELS: Record<FolderType, string> = {
   inbox: "Inbox",
@@ -34,6 +64,15 @@ export function MessageList({
   onSearch,
   onSelect,
   onToggleStar,
+  onReply,
+  onReplyAll,
+  onForward,
+  onSetRead,
+  onMoveMessage,
+  onArchiveMessage,
+  onNotSpam,
+  onDeleteMessage,
+  onToggleLabel,
   onRefresh,
   onOpenMenu,
   searchRef,
@@ -61,6 +100,15 @@ export function MessageList({
   onSearch: (q: string) => void
   onSelect: (m: MailMessage) => void
   onToggleStar: (m: MailMessage) => void
+  onReply: (m: MailMessage) => void
+  onReplyAll?: (m: MailMessage) => void
+  onForward?: (m: MailMessage) => void
+  onSetRead: (m: MailMessage) => void
+  onMoveMessage?: (m: MailMessage, folder: FolderType) => void
+  onArchiveMessage: (m: MailMessage) => void
+  onNotSpam: (m: MailMessage) => void
+  onDeleteMessage: (m: MailMessage) => void
+  onToggleLabel?: (messageId: number, labelId: number, add: boolean) => void
   onRefresh: () => void
   onOpenMenu: () => void
   searchRef?: React.RefObject<HTMLInputElement | null>
@@ -237,125 +285,275 @@ export function MessageList({
             {messages.map((m) => {
               const active = m.id === selectedId
               const checked = selectedIds.has(m.id)
+              const isMultiSelected = checked && selectedIds.size > 1
+
               return (
                 <li key={m.id}>
-                  <button
-                    onClick={() => onSelect(m)}
-                    className={cn(
-                      "relative flex w-full gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50",
-                      active && "bg-accent",
-                    )}
-                  >
-                    {!m.isRead && (selectedFolder === "inbox" || selectedFolder === "spam") && (
-                      <span className="absolute left-1.5 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-primary" />
-                    )}
-                    {/* Checkbox for multi-select */}
-                    <span
-                      role="checkbox"
-                      aria-checked={checked}
-                      tabIndex={-1}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onToggleSelect(m.id)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.stopPropagation()
-                          onToggleSelect(m.id)
-                        }
-                      }}
-                      className={cn(
-                        "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
-                        checked
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-muted-foreground/30 hover:border-muted-foreground",
-                      )}
-                    >
-                      {checked && <span className="text-xs font-bold">✓</span>}
-                    </span>
-                    <span
-                      className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                      style={{ backgroundColor: accountColor(m.accountId) }}
-                      aria-hidden
-                    >
-                      {initials(selectedFolder === "sent" || selectedFolder === "drafts" ? m.toAddresses : m.fromName)}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center justify-between gap-2">
-                        <span
-                          className={cn(
-                            "truncate text-sm",
-                            m.isRead ? "font-normal text-foreground" : "font-semibold text-foreground",
-                          )}
-                        >
-                          {selectedFolder === "sent" || selectedFolder === "drafts"
-                            ? `To: ${m.toAddresses}`
-                            : m.fromName}
-                        </span>
-                        <span className="shrink-0 text-xs text-muted-foreground">{formatListDate(m.receivedAt)}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span
-                          className={cn(
-                            "truncate text-sm",
-                            m.isRead ? "text-muted-foreground" : "font-medium text-foreground",
-                          )}
-                        >
-                          {m.subject || "(no subject)"}
-                        </span>
-                      </span>
-                      {!!m.labels?.length && (
-                        <span className="mt-1 flex flex-wrap gap-1">
-                          {m.labels.map((mailLabel) => (
-                            <span
-                              key={mailLabel.id}
-                              className="max-w-24 truncate rounded px-1.5 py-0.5 text-[10px] font-medium"
-                              style={{ color: mailLabel.color, backgroundColor: `${mailLabel.color}18` }}
-                            >
-                              {mailLabel.name}
-                            </span>
-                          ))}
-                        </span>
-                      )}
-                      {m.assignment && (
-                        <span className="mt-1 inline-flex max-w-full items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                          <span className="truncate">Assigned to {m.assignment.name}</span>
-                        </span>
-                      )}
-                      {m.folderType === "drafts" && m.draftShared && (
-                        <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                          Shared with team
-                        </span>
-                      )}
-                      <span className="mt-0.5 flex items-center gap-1.5">
-                        <span className="truncate text-xs text-muted-foreground">{m.preview}</span>
-                      </span>
-                    </span>
-                    <span className="flex shrink-0 flex-col items-center gap-1.5 pl-1">
-                      <span
+                  <ContextMenu>
+                    <ContextMenuTrigger className="block w-full">
+                      <div
                         role="button"
                         tabIndex={0}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onToggleStar(m)
-                        }}
+                        onClick={() => onSelect(m)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
-                            e.stopPropagation()
-                            onToggleStar(m)
+                            onSelect(m)
                           }
                         }}
-                        aria-label={m.isStarred ? "Unstar" : "Star"}
-                        className="text-muted-foreground hover:text-amber-500"
+                        className={cn(
+                          "relative flex w-full cursor-pointer gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50",
+                          active && "bg-accent",
+                        )}
                       >
-                        <Star className={cn("h-4 w-4", m.isStarred && "fill-amber-400 text-amber-400")} />
-                      </span>
-                      <span className="flex items-center gap-1">
-                        {m.isFlagged && <Flag className="h-3.5 w-3.5 fill-destructive text-destructive" />}
-                        {m.hasAttachments && <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />}
-                      </span>
-                    </span>
-                  </button>
+                        {!m.isRead && (selectedFolder === "inbox" || selectedFolder === "spam") && (
+                          <span className="absolute left-1.5 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-primary" />
+                        )}
+                        {/* Checkbox for multi-select */}
+                        <span
+                          role="checkbox"
+                          aria-checked={checked}
+                          tabIndex={-1}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onToggleSelect(m.id)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.stopPropagation()
+                              onToggleSelect(m.id)
+                            }
+                          }}
+                          className={cn(
+                            "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors",
+                            checked
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-muted-foreground/30 hover:border-muted-foreground",
+                          )}
+                        >
+                          {checked && <span className="text-xs font-bold">✓</span>}
+                        </span>
+                        <span
+                          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
+                          style={{ backgroundColor: accountColor(m.accountId) }}
+                          aria-hidden
+                        >
+                          {initials(selectedFolder === "sent" || selectedFolder === "drafts" ? m.toAddresses : m.fromName)}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-center justify-between gap-2">
+                            <span
+                              className={cn(
+                                "truncate text-sm",
+                                m.isRead ? "font-normal text-foreground" : "font-semibold text-foreground",
+                              )}
+                            >
+                              {selectedFolder === "sent" || selectedFolder === "drafts"
+                                ? `To: ${m.toAddresses}`
+                                : m.fromName}
+                            </span>
+                            <span className="shrink-0 text-xs text-muted-foreground">{formatListDate(m.receivedAt)}</span>
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <span
+                              className={cn(
+                                "truncate text-sm",
+                                m.isRead ? "text-muted-foreground" : "font-medium text-foreground",
+                              )}
+                            >
+                              {m.subject || "(no subject)"}
+                            </span>
+                          </span>
+                          {!!m.labels?.length && (
+                            <span className="mt-1 flex flex-wrap gap-1">
+                              {m.labels.map((mailLabel) => (
+                                <span
+                                  key={mailLabel.id}
+                                  className="max-w-24 truncate rounded px-1.5 py-0.5 text-[10px] font-medium"
+                                  style={{ color: mailLabel.color, backgroundColor: `${mailLabel.color}18` }}
+                                >
+                                  {mailLabel.name}
+                                </span>
+                              ))}
+                            </span>
+                          )}
+                          {m.assignment && (
+                            <span className="mt-1 inline-flex max-w-full items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                              <span className="truncate">Assigned to {m.assignment.name}</span>
+                            </span>
+                          )}
+                          {m.folderType === "drafts" && m.draftShared && (
+                            <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              Shared with team
+                            </span>
+                          )}
+                          <span className="mt-0.5 flex items-center gap-1.5">
+                            <span className="truncate text-xs text-muted-foreground">{m.preview}</span>
+                          </span>
+                        </span>
+                        <span className="flex shrink-0 flex-col items-center gap-1.5 pl-1">
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onToggleStar(m)
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation()
+                                onToggleStar(m)
+                              }
+                            }}
+                            aria-label={m.isStarred ? "Unstar" : "Star"}
+                            className="text-muted-foreground hover:text-amber-500"
+                          >
+                            <Star className={cn("h-4 w-4", m.isStarred && "fill-amber-400 text-amber-400")} />
+                          </span>
+                          <span className="flex items-center gap-1">
+                            {m.isFlagged && <Flag className="h-3.5 w-3.5 fill-destructive text-destructive" />}
+                            {m.hasAttachments && <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />}
+                          </span>
+                        </span>
+                      </div>
+                    </ContextMenuTrigger>
+
+                    <ContextMenuContent className="min-w-52">
+                      {isMultiSelected ? (
+                        <>
+                          <ContextMenuLabel>{selectedIds.size} messages selected</ContextMenuLabel>
+                          <ContextMenuSeparator />
+                          {m.folderType !== "sent" && m.folderType !== "drafts" && (
+                            <ContextMenuItem onClick={() => onReply(m)}>
+                              <Reply className="h-4 w-4" /> Reply to this
+                            </ContextMenuItem>
+                          )}
+                          <ContextMenuItem onClick={onBatchMarkRead}>
+                            <MailOpen className="h-4 w-4" /> Mark selected as read
+                          </ContextMenuItem>
+                          <ContextMenuItem onClick={() => onBatchStar?.(!allSelectedStarred)}>
+                            <Star className={cn("h-4 w-4", allSelectedStarred ? "text-muted-foreground" : "fill-amber-400 text-amber-500")} />
+                            {allSelectedStarred ? "Remove star from selected" : "Star selected"}
+                          </ContextMenuItem>
+                          <ContextMenuSeparator />
+                          {selectedFolder === "spam" ? (
+                            <ContextMenuItem onClick={onBatchArchive}>
+                              <ShieldCheck className="h-4 w-4 text-emerald-500" /> Not spam (Move to inbox)
+                            </ContextMenuItem>
+                          ) : (
+                            <ContextMenuItem onClick={onBatchArchive}>
+                              <Archive className="h-4 w-4" /> Archive selected
+                            </ContextMenuItem>
+                          )}
+                          <ContextMenuSub>
+                            <ContextMenuSubTrigger>
+                              <Tag className="h-4 w-4" /> Labels
+                            </ContextMenuSubTrigger>
+                            <ContextMenuSubContent>
+                              <ContextMenuLabel>Apply to selected</ContextMenuLabel>
+                              <ContextMenuSeparator />
+                              {labels.length ? labels.map((mailLabel) => (
+                                <ContextMenuSub key={mailLabel.id}>
+                                  <ContextMenuSubTrigger>
+                                    <span className="mr-1.5 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: mailLabel.color }} />
+                                    {mailLabel.name}
+                                  </ContextMenuSubTrigger>
+                                  <ContextMenuSubContent>
+                                    <ContextMenuItem onClick={() => onBatchToggleLabel(mailLabel.id, true)}>Apply to selected</ContextMenuItem>
+                                    <ContextMenuItem onClick={() => onBatchToggleLabel(mailLabel.id, false)}>Remove from selected</ContextMenuItem>
+                                  </ContextMenuSubContent>
+                                </ContextMenuSub>
+                              )) : <ContextMenuItem disabled>Create a label first</ContextMenuItem>}
+                            </ContextMenuSubContent>
+                          </ContextMenuSub>
+                          <ContextMenuSeparator />
+                          <ContextMenuItem variant="destructive" onClick={onBatchDelete}>
+                            <Trash2 className="h-4 w-4" /> Delete selected
+                          </ContextMenuItem>
+                        </>
+                      ) : (
+                        <>
+                          {m.folderType !== "sent" && m.folderType !== "drafts" && (
+                            <ContextMenuItem onClick={() => onReply(m)}>
+                              <Reply className="h-4 w-4" /> Reply
+                            </ContextMenuItem>
+                          )}
+                          {m.folderType !== "sent" && m.folderType !== "drafts" && onReplyAll && (
+                            <ContextMenuItem onClick={() => onReplyAll(m)}>
+                              <ReplyAll className="h-4 w-4" /> Reply all
+                            </ContextMenuItem>
+                          )}
+                          {m.folderType !== "drafts" && onForward && (
+                            <ContextMenuItem onClick={() => onForward(m)}>
+                              <Forward className="h-4 w-4" /> Forward
+                            </ContextMenuItem>
+                          )}
+                          {m.folderType !== "sent" && m.folderType !== "drafts" && <ContextMenuSeparator />}
+
+                          <ContextMenuItem onClick={() => onSetRead(m)}>
+                            {m.isRead ? <Mail className="h-4 w-4" /> : <MailOpen className="h-4 w-4" />}
+                            Mark as {m.isRead ? "unread" : "read"}
+                          </ContextMenuItem>
+
+                          <ContextMenuItem onClick={() => onToggleStar(m)}>
+                            <Star className={cn("h-4 w-4", m.isStarred && "fill-amber-400 text-amber-400")} />
+                            {m.isStarred ? "Remove star" : "Add to favourites (Star)"}
+                          </ContextMenuItem>
+                          <ContextMenuSeparator />
+
+                          {m.folderType === "spam" || selectedFolder === "spam" ? (
+                            <ContextMenuItem onClick={() => onNotSpam(m)}>
+                              <ShieldCheck className="h-4 w-4 text-emerald-500" /> Not spam (Move to inbox)
+                            </ContextMenuItem>
+                          ) : m.folderType === "trash" || selectedFolder === "trash" ? (
+                            <ContextMenuItem onClick={() => onMoveMessage ? onMoveMessage(m, "inbox") : onNotSpam(m)}>
+                              <Inbox className="h-4 w-4" /> Restore to inbox
+                            </ContextMenuItem>
+                          ) : (
+                            <>
+                              {m.folderType !== "archive" && (
+                                <ContextMenuItem onClick={() => onArchiveMessage(m)}>
+                                  <Archive className="h-4 w-4" /> Archive
+                                </ContextMenuItem>
+                              )}
+                              {onMoveMessage && (
+                                <ContextMenuItem onClick={() => onMoveMessage(m, "spam")}>
+                                  <ShieldAlert className="h-4 w-4 text-amber-500" /> Mark as spam
+                                </ContextMenuItem>
+                              )}
+                            </>
+                          )}
+
+                          <ContextMenuSub>
+                            <ContextMenuSubTrigger>
+                              <Tag className="h-4 w-4" /> Labels
+                            </ContextMenuSubTrigger>
+                            <ContextMenuSubContent>
+                              <ContextMenuLabel>Labels</ContextMenuLabel>
+                              <ContextMenuSeparator />
+                              {labels.length ? labels.map((mailLabel) => {
+                                const hasLabel = m.labels?.some((l) => l.id === mailLabel.id)
+                                return (
+                                  <ContextMenuItem
+                                    key={mailLabel.id}
+                                    onClick={() => onToggleLabel?.(m.id, mailLabel.id, !hasLabel)}
+                                  >
+                                    <span className="mr-1.5 h-2.5 w-2.5 rounded-full" style={{ backgroundColor: mailLabel.color }} />
+                                    <span className="flex-1">{mailLabel.name}</span>
+                                    {hasLabel && <Check className="ml-auto h-3.5 w-3.5 text-primary" />}
+                                  </ContextMenuItem>
+                                )
+                              }) : <ContextMenuItem disabled>Create a label first</ContextMenuItem>}
+                            </ContextMenuSubContent>
+                          </ContextMenuSub>
+
+                          <ContextMenuSeparator />
+                          <ContextMenuItem variant="destructive" onClick={() => onDeleteMessage(m)}>
+                            <Trash2 className="h-4 w-4" /> {m.folderType === "trash" ? "Delete forever" : "Delete (Move to trash)"}
+                          </ContextMenuItem>
+                        </>
+                      )}
+                    </ContextMenuContent>
+                  </ContextMenu>
                 </li>
               )
             })}
